@@ -12,20 +12,10 @@ class AccountController {
   constructor() {
     this.Accounts = [];
   }
-  /**
-   * Show a list of all accounts.
-   * GET accounts
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async index({ request, response, view }) {}
 
   /**
-   * Render a form to be used for creating a new account.
-   * GET accounts/create
+   * Reset array of accounts.
+   * POST accounts/reset
    *
    * @param {object} ctx
    * @param {Request} ctx.request
@@ -44,7 +34,7 @@ class AccountController {
 
   /**
    * Display a single account.
-   * GET accounts/:id
+   * GET accounts/balance
    *
    * @param {object} ctx
    * @param {Request} ctx.request
@@ -52,16 +42,17 @@ class AccountController {
    * @param {View} ctx.view
    */
   async getBalance({ params, request, response, view }) {
+    const accountId = request.only(["account_id"]);
     try {
       let balance = 0;
       var index = Accounts.findIndex(
-        (x) => x.destination.id === params.account_id
+        (x) => x.destination.id === accountId.account_id
       );
       if (index === -1) {
         return response.status(404).send(balance);
       } else {
         Accounts.forEach((element) => {
-          if (element.destination.id === params.account_id) {
+          if (element.destination.id === accountId.account_id) {
             balance = element.destination.balance;
           }
         });
@@ -82,9 +73,14 @@ class AccountController {
   async createAccount({ request, response }) {
     const data = request.only(["type", "destination", "amount"]);
     try {
+      const account = [];
+
       if (data.type == "deposit") {
         if (Accounts.length === 0) {
           Accounts.push({
+            destination: { id: data.destination, balance: data.amount },
+          });
+          account.push({
             destination: { id: data.destination, balance: data.amount },
           });
         } else {
@@ -92,6 +88,7 @@ class AccountController {
             if (element.destination.id === data.destination) {
               element.destination.balance =
                 data.amount + element.destination.balance;
+              account.push(element);
             } else {
               var index = Accounts.findIndex(
                 (x) => x.destination.id === data.destination
@@ -100,16 +97,32 @@ class AccountController {
                 Accounts.push({
                   destination: { id: data.destination, balance: data.amount },
                 });
+                account.push({
+                  destination: { id: data.destination, balance: data.amount },
+                });
               }
             }
           });
         }
-        return Accounts;
+        return account;
       } else if (data.type == "withdraw") {
+        var index = Accounts.findIndex(
+          (x) => x.destination.id === data.destination
+        );
+        if (index === -1) {
+          return response.status(404).send(0);
+        } else {
+          Accounts.forEach((element) => {
+            if (element.destination.id === data.destination) {
+              element.destination.balance =
+                element.destination.balance - data.amount;
+              account.push(element);
+            }
+          });
+        }
+        return account;
       } else {
       }
-
-      return Accounts;
     } catch (error) {
       return response.status(500).send({ erro: { message: error } });
     }

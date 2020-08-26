@@ -24,6 +24,6 @@ Route.group(() => {
   // Route.resource("event", "AccountController").apiOnly();
   Route.post("/reset", "AccountController.reset");
   Route.post("/event", "AccountController.createAccount");
-  Route.get("/balance/:account_id", "AccountController.getBalance");
+  Route.get("/balance", "AccountController.getBalance");
 }).prefix("api");
 // .middleware(["auth"]);
