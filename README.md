@@ -8,7 +8,7 @@ This is the boilerplate for creating an API server in AdonisJs, it comes pre-con
 4. Lucid ORM
 5. Migrations and seeds
 
-## Setup
+<!-- ## Setup
 
 Use the adonis command to install the blueprint
 
@@ -24,7 +24,7 @@ Run the following command to run startup migrations.
 
 ```js
 adonis migration:run
-```
+``` -->
 
 ### Install AdonisJs
 
