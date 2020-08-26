@@ -26,7 +26,7 @@ class AccountController {
     try {
       Accounts.splice(0, Accounts.length);
 
-      return response.status(200).send({ message: "OK" });
+      return response.status(200).send("OK");
     } catch (error) {
       return response.status(500).send({ erro: { message: error } });
     }
@@ -71,7 +71,7 @@ class AccountController {
    * @param {Response} ctx.response
    */
   async createAccount({ request, response }) {
-    const data = request.only(["type", "destination", "amount"]);
+    const data = request.only(["type", "destination", "amount", "origin"]);
     try {
       const account = [];
 
@@ -106,22 +106,66 @@ class AccountController {
         }
         return account;
       } else if (data.type == "withdraw") {
-        var index = Accounts.findIndex(
-          (x) => x.destination.id === data.destination
-        );
+        var index = Accounts.findIndex((x) => x.destination.id === data.origin);
         if (index === -1) {
           return response.status(404).send(0);
         } else {
           Accounts.forEach((element) => {
-            if (element.destination.id === data.destination) {
+            if (element.destination.id === data.origin) {
               element.destination.balance =
                 element.destination.balance - data.amount;
-              account.push(element);
+
+              account.push({
+                origin: {
+                  id: element.destination.id,
+                  balance: element.destination.balance,
+                },
+              });
             }
           });
         }
         return account;
       } else {
+        var index = Accounts.findIndex(
+          (x) => x.destination.id === data.destination
+        );
+        var index2 = Accounts.findIndex(
+          (x) => x.destination.id === data.origin
+        );
+        if (index === -1 || index2 === -1) {
+          return response.status(404).send(0);
+        } else {
+          var destBalance = 0;
+          var origBalance = 0;
+          Accounts.forEach((element) => {
+            if (element.destination.id === data.origin) {
+              if (element.destination.balance >= data.amount) {
+                element.destination.balance =
+                  element.destination.balance - data.amount;
+                origBalance = element.destination.balance;
+              } else {
+                return response
+                  .status(500)
+                  .send({ erro: { message: "Não há saldo disponível" } });
+              }
+            } else if (element.destination.id === data.destination) {
+              element.destination.balance =
+                element.destination.balance + data.amount;
+              destBalance = element.destination.balance;
+              account.push({
+                origin: {
+                  id: data.origin,
+                  balance: origBalance,
+                },
+                destination: {
+                  id: data.destination,
+                  balance: destBalance,
+                },
+              });
+            }
+          });
+        }
+        return account;
       }
     } catch (error) {
       return response.status(500).send({ erro: { message: error } });
