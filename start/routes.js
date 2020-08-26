@@ -25,5 +25,6 @@ Route.group(() => {
   Route.post("/reset", "AccountController.reset");
   Route.post("/event", "AccountController.createAccount");
   Route.get("/balance", "AccountController.getBalance");
-}).prefix("api");
+});
+//prefix("api");
 // .middleware(["auth"]);

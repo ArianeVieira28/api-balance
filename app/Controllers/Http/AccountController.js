@@ -1,5 +1,5 @@
 "use strict";
-const Accounts = use("App/Middleware/Storage");
+const accounts = use("App/Middleware/Storage");
 /** @typedef {import('@adonisjs/framework/src/Request')} Request */
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
 /** @typedef {import('@adonisjs/framework/src/View')} View */
@@ -7,10 +7,9 @@ const Accounts = use("App/Middleware/Storage");
 /**
  * Resourceful controller for interacting with accounts
  */
-// const accounts = [];
 class AccountController {
   constructor() {
-    this.Accounts = [];
+    this.accounts = [];
   }
 
   /**
@@ -24,7 +23,7 @@ class AccountController {
    */
   async reset({ request, response, view }) {
     try {
-      Accounts.splice(0, Accounts.length);
+      accounts.splice(0, accounts.length);
 
       return response.status(200).send("OK");
     } catch (error) {
@@ -45,13 +44,13 @@ class AccountController {
     const accountId = request.only(["account_id"]);
     try {
       let balance = 0;
-      var index = Accounts.findIndex(
+      var index = accounts.findIndex(
         (x) => x.destination.id === accountId.account_id
       );
       if (index === -1) {
         return response.status(404).send(balance);
       } else {
-        Accounts.forEach((element) => {
+        accounts.forEach((element) => {
           if (element.destination.id === accountId.account_id) {
             balance = element.destination.balance;
           }
@@ -73,86 +72,69 @@ class AccountController {
   async createAccount({ request, response }) {
     const data = request.only(["type", "destination", "amount", "origin"]);
     try {
-      const account = [];
-
+      let obj = {};
       if (data.type == "deposit") {
-        if (Accounts.length === 0) {
-          Accounts.push({
+        if (accounts.length === 0) {
+          accounts.push({
             destination: { id: data.destination, balance: data.amount },
           });
-          account.push({
-            destination: { id: data.destination, balance: data.amount },
-          });
+          obj = accounts[accounts.length - 1];
         } else {
-          Accounts.forEach((element) => {
+          accounts.forEach((element) => {
             if (element.destination.id === data.destination) {
               element.destination.balance =
                 data.amount + element.destination.balance;
-              account.push(element);
+              obj = accounts[accounts.length - 1];
             } else {
-              var index = Accounts.findIndex(
+              var index = accounts.findIndex(
                 (x) => x.destination.id === data.destination
               );
               if (index === -1) {
-                Accounts.push({
-                  destination: { id: data.destination, balance: data.amount },
-                });
-                account.push({
+                accounts.push({
                   destination: { id: data.destination, balance: data.amount },
                 });
               }
+              obj = accounts[accounts.length - 1];
             }
           });
         }
-        return account;
+        return response.status(201).send(obj);
       } else if (data.type == "withdraw") {
-        var index = Accounts.findIndex((x) => x.destination.id === data.origin);
+        var index = accounts.findIndex((x) => x.destination.id === data.origin);
         if (index === -1) {
           return response.status(404).send(0);
         } else {
-          Accounts.forEach((element) => {
+          accounts.forEach((element) => {
             if (element.destination.id === data.origin) {
               element.destination.balance =
                 element.destination.balance - data.amount;
 
-              account.push({
+              obj = {
                 origin: {
                   id: element.destination.id,
                   balance: element.destination.balance,
                 },
-              });
+              };
             }
           });
         }
-        return account;
+        return response.status(201).send(obj);
       } else {
-        var index = Accounts.findIndex(
-          (x) => x.destination.id === data.destination
-        );
-        var index2 = Accounts.findIndex(
-          (x) => x.destination.id === data.origin
-        );
-        if (index === -1 || index2 === -1) {
+        var index = accounts.findIndex((x) => x.destination.id === data.origin);
+        if (index === -1) {
           return response.status(404).send(0);
         } else {
           var destBalance = 0;
           var origBalance = 0;
-          Accounts.forEach((element) => {
+          accounts.forEach((element) => {
             if (element.destination.id === data.origin) {
-              if (element.destination.balance >= data.amount) {
-                element.destination.balance =
-                  element.destination.balance - data.amount;
-                origBalance = element.destination.balance;
-              } else {
-                return response
-                  .status(500)
-                  .send({ erro: { message: "Não há saldo disponível" } });
-              }
-            } else if (element.destination.id === data.destination) {
               element.destination.balance =
-                element.destination.balance + data.amount;
-              destBalance = element.destination.balance;
-              account.push({
+                element.destination.balance - data.amount;
+
+              origBalance = element.destination.balance;
+              destBalance = data.amount;
+
+              obj = {
                 origin: {
                   id: data.origin,
                   balance: origBalance,
@@ -161,11 +143,11 @@ class AccountController {
                   id: data.destination,
                   balance: destBalance,
                 },
-              });
+              };
             }
           });
         }
-        return account;
+        return response.status(201).send(obj);
       }
     } catch (error) {
       return response.status(500).send({ erro: { message: error } });
